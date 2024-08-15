@@ -3,7 +3,6 @@
 **Space Battles** is a 2D space-themed game where you battle multiple waves of enemy ships which get stronger as you progress.
 
 ## Version
-
 - Alpha 0.1
 - Notice: As this game is in Alpha, there is to be expected bugs that may come around any time.
 
