@@ -1,0 +1,8 @@
+As you progress through levels, enemies become stronger.
+Every 10th level is a boss level. Bosses have 500 HP and deal 50 damage.
+After level 5, a heart has a 2% chance to spawn each second.
+Hearts that spawn randomly after level 5 will fully heal you!
+As you progress in levels, your firerate increases, allowing you to shoot faster.
+Crystals have a 10% chance of spawning every three seconds.
+Crystals will give you 300 extra points to your score!
+Please avoid any and all projectiles...
