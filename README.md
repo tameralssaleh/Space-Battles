@@ -6,6 +6,10 @@
 - Alpha 0.1
 - Notice: As this game is in Alpha, there is to be expected bugs that may come around any time.
 
+## Instructions
+- To play the game, you need to download the SpaceBattles.zip file and extract to /SpaceBattles. 
+- After that, simply run the SpaceBattles.exe file and enjoy!
+
 ## Change Log Pre-alpha 0.0.1 -> Alpha 0.1 (Stable) August 15, 2024
 - Fixed bug where selecting level or continuing a level did not always display the correct level metrics.
 - (As far as I know) Fixed a bug where hearts and crystals still display on the game over or level complete screens.
