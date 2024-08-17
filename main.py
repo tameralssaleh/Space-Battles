@@ -4,12 +4,14 @@ import os
 import random
 import json
 import time
+import shutil
+from datetime import datetime
 from player import Player
 from enemy import Enemy, Boss
 from gui import Button, LevelButton
 from items import Heart, Crystal
 from levels import levels
-import time
+
 
 pygame.init()
 
@@ -153,7 +155,7 @@ def win_screen(surface, final_score, high_score):
     surface.blit(tip_text, tip_text.get_rect(center=(SCREENSIZE[0] // 2, SCREENSIZE[1] // 1.20)))    
 
 def select_level():
-    time.sleep(0.1)
+    time.sleep(0.1) # Prevents more than one click to be registered
     with open("save/data.json", "r") as f:
         data = json.load(f)
         
@@ -224,6 +226,36 @@ def select_level():
                 else:
                     pass
     f.close()
+
+def options_screen():
+    options_font = pygame.font.Font(None, 64)
+    options_title = options_font.render("Options", True, (255, 255, 255))
+    back_btn = Button(text="Back", x=SCREENSIZE[0] // 2 - 350, y=525, width=150, height=50, font=pygame.font.Font(None, 36), color=(156, 30, 42), hover_color=(184, 55, 67))
+    while True:
+        clear_crash_btn = Button(text=f"Clear Crash Data ({len(os.listdir('crashdata')) if os.path.exists('crashdata') else 0})", x=SCREENSIZE[0] // 2 - 150, y=SCREENSIZE[1] // 2 - 150, width=300, height=50, font=pygame.font.Font(None, 36), color=(99, 99, 99), hover_color=(145, 145, 145))
+        window.blit(title_bg, (0, 0))
+        window.blit(options_title, (SCREENSIZE[0] // 2 - options_title.get_width() // 2, SCREENSIZE[1] // 4 - 100))
+        back_btn.draw(window)
+        clear_crash_btn.draw(window)
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        mouse_pressed = pygame.mouse.get_pressed()
+        
+        if mouse_pressed[0]:
+            if back_btn.is_clicked(mouse_x, mouse_y):
+                title_screen()  # End loop & return to title screen.
+                break
+            if clear_crash_btn.is_clicked(mouse_x, mouse_y):
+                if os.path.exists("crashdata"):
+                    shutil.rmtree("crashdata")
+                    clear_crash_btn.text = "Crash Data Cleared"
 
 def show_stats():
     with open("save/data.json", "r") as f:
@@ -312,6 +344,9 @@ def title_screen():
             elif select_lvl_btn.is_clicked(mouse_x, mouse_y):
                 select_level()
                 break
+            elif options_btn.is_clicked(mouse_x, mouse_y):
+                options_screen()
+                break
             elif stats_btn.is_clicked(mouse_x, mouse_y):
                 show_stats()
                 break
@@ -328,184 +363,192 @@ running = True
 title_screen()  # Display the title screen
 
 while running:
-    try:
+    try:      
         with open("save/data.json", "r") as f:
             data = json.load(f)
-    except PermissionError as e:
-        print(f"{e}: An error has occurred while opening save/data.json")
 
-    clock.tick(60)
+        clock.tick(60)
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
 
-    keys = pygame.key.get_pressed()
+        keys = pygame.key.get_pressed()
 
-    if keys[pygame.K_ESCAPE]:
-        title_screen() # Pause game & return to title screen
+        if keys[pygame.K_ESCAPE]:
+            title_screen() # Pause game & return to title screen
 
-    if not game_over_flag and not win_game_flag:
-        window.blit(background, (0, 0))
+        if not game_over_flag and not win_game_flag:
+            window.blit(background, (0, 0))
 
-        if keys[pygame.K_SPACE] or keys[pygame.K_UP] or keys[pygame.K_w]:
-            player.fire_projectile(keys)
+            if keys[pygame.K_SPACE] or keys[pygame.K_UP] or keys[pygame.K_w]:
+                player.fire_projectile(keys)
 
-        player.movement(keys)
-        player.check_collision()
-        player.draw(window)
+            player.movement(keys)
+            player.check_collision()
+            player.draw(window)
 
-        for enemy in enemies:
-            enemy.draw(window)
-            enemy.movement()
-            enemy.fire_projectile()
-            enemy.check_collision(player)
+            for enemy in enemies:
+                enemy.draw(window)
+                enemy.movement()
+                enemy.fire_projectile()
+                enemy.check_collision(player)
 
-            if enemy.kills_player:
+                if enemy.kills_player:
+                    player.projectiles.clear()
+                    game_over(window, player.score, player.high_score)
+                    game_over_flag = True
+                    break  # Exit the for loop if the game is over
+
+            if not game_over_flag and len(enemies) == 0:
                 player.projectiles.clear()
-                game_over(window, player.score, player.high_score)
-                game_over_flag = True
-                break  # Exit the for loop if the game is over
+                for heart in heart_drops[:]:
+                    if heart.active:
+                        heart.active = False
+                for crystal in crystal_drops[:]:
+                    if crystal.active:
+                        crystal.active = False
+                win_screen(window, player.score, player.high_score)
+                f.close()
+                win_game_flag = True
 
-        if not game_over_flag and len(enemies) == 0:
-            player.projectiles.clear()
+            if player.level > 5:
+                if time.time() - heart_drop_attempt_time >= heart_drop_attempt_cooldown:
+                    heart_drop_attempt_time = time.time()  # Reset the attempt time
+                    spawn_heart_chance = random.choice(heart_drop_rate)
+
+                    if spawn_heart_chance:
+                        # Create a new heart and add it to the list
+                        heart = Heart(random.randint(64, SCREENSIZE[0] - 64), 32, heart_img, SCREENSIZE) 
+                        heart_drops.append(heart)
+
+            # Update and draw hearts
             for heart in heart_drops[:]:
                 if heart.active:
-                    heart.active = False
-            for crystal in crystal_drops[:]:
-                if crystal.active:
-                    crystal.active = False
-            win_screen(window, player.score, player.high_score)
-            f.close()
-            win_game_flag = True
+                    heart.draw(window)
+                    heart.update()
 
-        if player.level > 5:
-            if time.time() - heart_drop_attempt_time >= heart_drop_attempt_cooldown:
-                heart_drop_attempt_time = time.time()  # Reset the attempt time
-                spawn_heart_chance = random.choice(heart_drop_rate)
+                    if heart.hitbox.colliderect(player.hitbox):
+                        heal_sound.play()
+                        player.health = 100
+                        heart.active = False
+                        heart_drops.remove(heart)
 
-                if spawn_heart_chance:
-                    # Create a new heart and add it to the list
-                    heart = Heart(random.randint(64, SCREENSIZE[0] - 64), 32, heart_img, SCREENSIZE) 
-                    heart_drops.append(heart)
-
-        # Update and draw hearts
-        for heart in heart_drops[:]:
-            if heart.active:
-                heart.draw(window)
-                heart.update()
-
-                if heart.hitbox.colliderect(player.hitbox):
-                    heal_sound.play()
-                    player.health = 100
-                    heart.active = False
+                # Remove heart if it goes off-screen
+                if heart.y > SCREENSIZE[1]:
                     heart_drops.remove(heart)
 
-            # Remove heart if it goes off-screen
-            if heart.y > SCREENSIZE[1]:
-                heart_drops.remove(heart)
+            if time.time() - crystal_drop_attempt_time >= crystal_drop_attempt_cooldown:
+                crystal_drop_attempt_time = time.time()  # Reset the attempt time
+                spawn_crystal_chance = random.choice(crystal_drop_rate)
 
-        if time.time() - crystal_drop_attempt_time >= crystal_drop_attempt_cooldown:
-            crystal_drop_attempt_time = time.time()  # Reset the attempt time
-            spawn_crystal_chance = random.choice(crystal_drop_rate)
+                if spawn_crystal_chance:
+                    # Create a new crystal and add it to the list
+                    crystal = Crystal(random.randint(64, SCREENSIZE[0] - 64), 32, crystal_img, SCREENSIZE) 
+                    crystal_drops.append(crystal)
 
-            if spawn_crystal_chance:
-                # Create a new crystal and add it to the list
-                crystal = Crystal(random.randint(64, SCREENSIZE[0] - 64), 32, crystal_img, SCREENSIZE) 
-                crystal_drops.append(crystal)
+            # Update and draw crystals
+            for crystal in crystal_drops[:]:
+                if crystal.active:
+                    crystal.draw(window)
+                    crystal.update()
+                    if crystal.hitbox.colliderect(player.hitbox):
+                        grab_sound.set_volume(1)
+                        grab_sound.play()
+                        player.score += 300
+                        player.crystals += 1
+                        crystal.active = False
+                        crystal_drops.remove(crystal)
 
-        # Update and draw crystals
-        for crystal in crystal_drops[:]:
-            if crystal.active:
-                crystal.draw(window)
-                crystal.update()
+                # Remove crystal if it goes off-screen
+                if crystal.y > SCREENSIZE[1]:
+                    crystal_drops.remove(crystal)  
 
-                if crystal.hitbox.colliderect(player.hitbox):
-                    grab_sound.play()
-                    player.score += 300
-                    player.crystals += 1
-                    crystal.active = False
-                    crystal_drops.remove(crystal)
+            # Text for score, level, enemy count, and health
 
-            # Remove crystal if it goes off-screen
-            if crystal.y > SCREENSIZE[1]:
-                crystal_drops.remove(crystal)  
+            if not game_over_flag and not win_game_flag: # Display text and icons until level is beaten or lost.
 
-        # Text for score, level, enemy count, and health
+                score_text = medium_font.render(f"Score: {player.score}", True, game_text_color)
+                window.blit(score_text, (10, SCREENSIZE[1] - 40))
 
-        if not game_over_flag and not win_game_flag: # Display text and icons until level is beaten or lost.
+                level_text = medium_font.render(f"Level: {data['Level']}", True, game_text_color)
+                window.blit(level_text, (200, SCREENSIZE[1] - 40))
 
-            score_text = medium_font.render(f"Score: {player.score}", True, game_text_color)
-            window.blit(score_text, (10, SCREENSIZE[1] - 40))
+                window.blit(player_img_icon, (450, SCREENSIZE[1] - 45))
 
-            level_text = medium_font.render(f"Level: {data['Level']}", True, game_text_color)
-            window.blit(level_text, (200, SCREENSIZE[1] - 40))
+                enemies_text = medium_font.render(str(len(enemies)), True, game_text_color)
+                window.blit(enemies_text, (485, SCREENSIZE[1] - 40))
 
-            window.blit(player_img_icon, (450, SCREENSIZE[1] - 45))
+                window.blit(heart_img, (690, SCREENSIZE[1] - 45))
 
-            enemies_text = medium_font.render(str(len(enemies)), True, game_text_color)
-            window.blit(enemies_text, (485, SCREENSIZE[1] - 40))
+                health_text = medium_font.render(str(player.health), True, game_text_color)
+                window.blit(health_text, (725, SCREENSIZE[1] - 40))
+            
+            pygame.display.flip()
 
-            window.blit(heart_img, (690, SCREENSIZE[1] - 45))
+        if game_over_flag:
+            play_again_btn.draw(window)
+            quit_btn.draw(window)
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            mouse_pressed = pygame.mouse.get_pressed()
+            if mouse_pressed[0]:
+                with open("save/data.json", "r") as f:
+                    data = json.load(f)
+                if play_again_btn.is_clicked(mouse_x, mouse_y):
+                    start_game(str(data["Level"]))
+                    continue
+                elif quit_btn.is_clicked(mouse_x, mouse_y):
+                    with open("save/data.json", "r+") as f: # Open file in read and write mode before quitting game
+                        data["Level"] = player.level
+                        data["Crystals"] = player.crystals
+                        json.dump(data, f, indent=4)
+                    f.close()
+                    pygame.quit()
+                    sys.exit()
 
-            health_text = medium_font.render(str(player.health), True, game_text_color)
-            window.blit(health_text, (725, SCREENSIZE[1] - 40))
-        
-        pygame.display.flip()
-
-    if game_over_flag:
-        play_again_btn.draw(window)
-        quit_btn.draw(window)
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        mouse_pressed = pygame.mouse.get_pressed()
-        if mouse_pressed[0]:
-            with open("save/data.json", "r") as f:
-                data = json.load(f)
-            if play_again_btn.is_clicked(mouse_x, mouse_y):
-                start_game(str(data["Level"]))
-                continue
-            elif quit_btn.is_clicked(mouse_x, mouse_y):
-                with open("save/data.json", "r+") as f: # Open file in read and write mode before quitting game
+        if win_game_flag:
+            play_again_btn.draw(window)
+            quit_btn.draw(window)
+            next_level_btn.draw(window)
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            mouse_pressed = pygame.mouse.get_pressed()
+            if mouse_pressed[0]:
+                with open("save/data.json", "r") as f:
+                    data = json.load(f)
+                if play_again_btn.is_clicked(mouse_x, mouse_y):
+                    start_game(str(data["Level"]))
+                    continue
+                elif next_level_btn.is_clicked(mouse_x, mouse_y):
+                    if player.level == player.unlocked_levels:
+                        if player.unlocked_levels == len(levels):
+                            pass
+                        player.unlocked_levels += 1
+                        data["Unlocked Levels"] = player.unlocked_levels
+                    player.level += 1
                     data["Level"] = player.level
-                    data["Crystals"] = player.crystals
-                    json.dump(data, f, indent=4)
-                f.close()
-                pygame.quit()
-                sys.exit()
+                    with open("save/data.json", "w") as f:
+                        json.dump(data, f, indent=4)
+                    start_game(str(data["Level"]))
+                    continue
+                elif quit_btn.is_clicked(mouse_x, mouse_y):
+                    with open("save/data.json", "r+") as f: # Open file in read and write mode before quitting game
+                        data["Level"] = player.level
+                        data["Crystals"] = player.crystals
+                        json.dump(data, f, indent=4)
+                    f.close()
+                    pygame.quit()
+                    sys.exit()
+    except Exception as error:
+        directory = "crashdata"
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
-    if win_game_flag:
-        play_again_btn.draw(window)
-        quit_btn.draw(window)
-        next_level_btn.draw(window)
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        mouse_pressed = pygame.mouse.get_pressed()
-        if mouse_pressed[0]:
-            with open("save/data.json", "r") as f:
-                data = json.load(f)
-            if play_again_btn.is_clicked(mouse_x, mouse_y):
-                start_game(str(data["Level"]))
-                continue
-            elif next_level_btn.is_clicked(mouse_x, mouse_y):
-                if player.level == player.unlocked_levels:
-                    if player.unlocked_levels == len(levels):
-                        pass
-                    player.unlocked_levels += 1
-                    data["Unlocked Levels"] = player.unlocked_levels
-                player.level += 1
-                data["Level"] = player.level
-                with open("save/data.json", "w") as f:
-                    json.dump(data, f, indent=4)
-                start_game(str(data["Level"]))
-                continue
-            elif quit_btn.is_clicked(mouse_x, mouse_y):
-                with open("save/data.json", "r+") as f: # Open file in read and write mode before quitting game
-                    data["Level"] = player.level
-                    data["Crystals"] = player.crystals
-                    json.dump(data, f, indent=4)
-                f.close()
-                pygame.quit()
-                sys.exit()
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        file_path = f"{directory}/{timestamp}.txt"
 
+        with open(file_path, "w+") as f:
+            f.write(f"Error - Fatal - {datetime.now().strftime('%B %d, %Y, %H:%M:%S')}\n")
+            f.write(f"Error has occurred in the main game loop: {error}\n")
 pygame.quit()
 sys.exit()

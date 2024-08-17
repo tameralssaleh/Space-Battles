@@ -73,6 +73,7 @@ class Player(object):
                 projectile = Projectile(self.x + self.width // 2 - 4, self.y, 16, 16, self.projectile_velocity, self.projectile_image)
                 self.projectiles.append(projectile)
                 self.last_fire_time = cur_time  # Update the last fire time
+                self.projectile_sound.set_volume(0.5)
                 self.projectile_sound.play()
 
     def check_collision(self):
@@ -82,7 +83,7 @@ class Player(object):
             for enemy in self.enemies:
                 if projectile.hitbox.colliderect(enemy.hitbox):
                     enemy.health -= 10
-                    self.hit_sound.set_volume(0.25)
+                    self.hit_sound.set_volume(1)
                     self.hit_sound.play()
                     self.projectiles.remove(projectile)
                     enemy.hit()

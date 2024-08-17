@@ -10,14 +10,8 @@
 - To play the game, you need to download the SpaceBattles.zip file and extract to /SpaceBattles. 
 - After that, simply run the SpaceBattles.exe file and enjoy!
 
-## Change Log Pre-alpha 0.0.1 -> Alpha 0.1 (Stable) August 15, 2024
-- Fixed bug where selecting level or continuing a level did not always display the correct level metrics.
-- (As far as I know) Fixed a bug where hearts and crystals still display on the game over or level complete screens.
-- Fixed a bug where if you lose or beat a level, any projectiles still flying will port over to the next or restarted level.
-- Added save functionality for players collecting crystals (Have not found any bugs yet... But I am not so sure)
-- In addition to the new save functionality for crystals, you can view how many crystals you have in the stats menu.
-- Configured text placement for on stats menu and for the main game level.
-- For the health and enemy counts at the bottom of each level, instead of the text "Health" and "Enemies", there are now respective icons for both.
+## Change Log 0.1 -> 0.1.1 (Stable) August 15, 2024
+- Added a crashdata directory. This will be used for handling any erorrs or crashes that may occur when running SpaceBattles. This will allow you to report bugs easier just by sending in the .txt file with the date and time of the crash as it's file name. I plan to make this even better in the near future.
 
 ## Known Bugs to be Expected
 - No currently known bugs as of this build. Feel free to comment any bugs you may find on this repository.
