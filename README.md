@@ -35,6 +35,6 @@
 - After level 10, the player will begin to have slightly increased firerate and will further increase as you progress through levels.
 
 ## Disclaimer (IMPORTANT)
-- The backgrounds and audio are not mine and are sampled sites like YouTube and other image/audio sharing sites that offer royalty-free
+- The backgrounds and audio are not mine and are sampled from sites like YouTube and other image/video/audio sharing sites that offer royalty-free
 contents. All sounds in this game can be found on https://www.freesound.org/
 - All icons under the /sprites folder are made by myself.
